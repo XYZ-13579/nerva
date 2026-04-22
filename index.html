@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ja">
 
@@ -926,6 +927,11 @@
                 if (recognition) {
                     try { recognition.stop(); } catch (e) { }
                 }
+                // 読み上げ開始時に、未送信の音声認識タイマーがあればクリアする
+                if (silenceTimer) {
+                    clearTimeout(silenceTimer);
+                    silenceTimer = null;
+                }
 
                 utterance.onstart = () => { isAiSpeaking = true; };
                 utterance.onend = () => {
@@ -1088,6 +1094,7 @@
         const SILENCE_MS = 3000;
 
         function clearTranscriptAndSend() {
+            if (!isListening) return; // マイクがオフなら何もしない
             if (currentTranscript.trim()) {
                 const textToSend = currentTranscript;
                 currentTranscript = '';
@@ -1112,6 +1119,7 @@
         }
 
         function resetSilenceTimer() {
+            if (!isListening) return; 
             if (silenceTimer) clearTimeout(silenceTimer);
             silenceTimer = setTimeout(clearTranscriptAndSend, SILENCE_MS);
         }
@@ -1211,20 +1219,19 @@
         document.getElementById('stop-btn').onclick = () => {
             isListening = false;
             if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null; }
-            if (recognition) { try { recognition.stop(); } catch (e) { } }
-
-            // AI読み上げも停止
-            window.speechSynthesis.cancel();
-            isAiSpeaking = false;
-            isWaitingForAi = false;
+            if (recognition) { try { recognition.abort(); } catch (e) { } } 
 
             statusDot.classList.remove('listening');
             statusLabel.classList.remove('listening');
             statusLabel.textContent = 'STANDBY';
 
-            interimTextEl.textContent = ''; // 認識中テキストを消す
-            if (!currentTranscript) {
+            interimTextEl.textContent = ''; 
+            currentTranscript = ''; // 未送信のテキストはクリアする
+
+            // AIが処理中または発話中でない場合のみ、プレースホルダーをリセットする
+            if (!isWaitingForAi && !isAiSpeaking) {
                 placeholder.style.display = 'block';
+                placeholder.textContent = 'テキストを入力するか、音声入力を開始してください';
             }
         };
 
