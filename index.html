@@ -266,22 +266,31 @@
         #settings-modal {
             position: fixed;
             inset: 0;
-            background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(8px);
+            background: rgba(0, 0, 0, 0.15);
             z-index: 100;
             display: flex;
-            align-items: center;
-            justify-content: center;
+            justify-content: flex-end;
+            pointer-events: none;
         }
 
         .modal-content {
-            background: rgba(0, 50, 40, 0.9);
-            border: 1px solid var(--theme-color);
-            box-shadow: 0 0 20px rgba(var(--theme-r), var(--theme-g), var(--theme-b), 0.2);
-            border-radius: 6px;
-            width: min(400px, 90vw);
-            padding: 20px;
+            background: rgba(0, 0, 0, 0.72);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border-left: 1px solid rgba(var(--theme-r), var(--theme-g), var(--theme-b), 0.4);
+            box-shadow: -10px 0 40px rgba(0, 0, 0, 0.6);
+            width: 360px;
+            height: 100vh;
+            padding: 32px 24px;
             pointer-events: auto;
+            display: flex;
+            flex-direction: column;
+            animation: sidebarIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes sidebarIn {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
         }
 
         .modal-header {
@@ -337,6 +346,28 @@
             cursor: pointer;
             padding: 0;
             height: 4px;
+        }
+
+        .setting-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .reset-btn {
+            background: transparent;
+            border: none;
+            color: rgba(255, 255, 255, 0.4);
+            cursor: pointer;
+            font-size: 14px;
+            padding: 0 5px;
+            transition: color 0.2s;
+            font-family: sans-serif;
+            line-height: 1;
+        }
+
+        .reset-btn:hover {
+            color: var(--theme-color);
         }
 
         /* ===== Controls ===== */
@@ -426,12 +457,12 @@
 
     <!-- Settings Modal -->
     <div id="settings-modal" style="display: none;">
-        <div class="modal-content" style="max-height: 85vh; overflow-y: auto;">
+        <div class="modal-content">
             <div class="modal-header">
                 <h2>CONFIG</h2>
                 <button id="close-settings-btn">✕</button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body" style="flex: 1; overflow-y: auto; padding-right: 4px;">
                 <h3
                     style="color: var(--theme-color); font-size: 13px; margin-bottom: 10px; margin-top: 10px; border-bottom: 1px solid rgba(var(--theme-r), var(--theme-g), var(--theme-b), 0.3); padding-bottom: 5px;">
                     VOICE</h3>
@@ -455,6 +486,100 @@
                     <label>LENGTH (Chars): <span id="length-val">200</span></label>
                     <input type="range" id="length-range" min="50" max="1000" step="50" value="200">
                 </div>
+
+                <h3
+                    style="color: var(--theme-color); font-size: 13px; margin-bottom: 10px; margin-top: 20px; border-bottom: 1px solid rgba(var(--theme-r), var(--theme-g), var(--theme-b), 0.3); padding-bottom: 5px;">
+                    VISUAL</h3>
+                <div class="setting-item">
+                    <div class="setting-header">
+                        <label>THEME COLOR</label>
+                        <button class="reset-btn visual-reset-btn" data-param="themeColor">↺</button>
+                    </div>
+                    <input type="color" id="theme-color" value="#00ffdc">
+                </div>
+                <div class="setting-item">
+                    <div class="setting-header">
+                        <label>BG COLOR</label>
+                        <button class="reset-btn visual-reset-btn" data-param="bgColor">↺</button>
+                    </div>
+                    <input type="color" id="bg-color" value="#000000">
+                </div>
+                <div class="setting-item">
+                    <div class="setting-header">
+                        <label>LIGHT 1 COLOR</label>
+                        <button class="reset-btn visual-reset-btn" data-param="lightColor1">↺</button>
+                    </div>
+                    <input type="color" id="light1-color" value="#00ffff">
+                </div>
+                <div class="setting-item">
+                    <div class="setting-header">
+                        <label>LIGHT 2 COLOR</label>
+                        <button class="reset-btn visual-reset-btn" data-param="lightColor2">↺</button>
+                    </div>
+                    <input type="color" id="light2-color" value="#007fff">
+                </div>
+                <div class="setting-item">
+                    <div class="setting-header">
+                        <label>INTENSITY: <span id="intensity-val">1.0</span></label>
+                        <button class="reset-btn visual-reset-btn" data-param="lightIntensity">↺</button>
+                    </div>
+                    <input type="range" id="intensity-range" min="0.0" max="2.0" step="0.1" value="1.0">
+                </div>
+                <div class="setting-item">
+                    <div class="setting-header">
+                        <label>BLOCK SIZE: <span id="block-size-val">27</span></label>
+                        <button class="reset-btn visual-reset-btn" data-param="blockSize">↺</button>
+                    </div>
+                    <input type="range" id="block-size-range" min="5" max="100" step="1" value="27">
+                </div>
+                <div class="setting-item">
+                    <div class="setting-header">
+                        <label>GRID SPACING: <span id="grid-spacing-val">58</span></label>
+                        <button class="reset-btn visual-reset-btn" data-param="gridSpacing">↺</button>
+                    </div>
+                    <input type="range" id="grid-spacing-range" min="10" max="150" step="1" value="58">
+                </div>
+                <div class="setting-item">
+                    <div class="setting-header">
+                        <label>GRID MULTIPLIER: <span id="grid-size-val">0.95</span></label>
+                        <button class="reset-btn visual-reset-btn" data-param="gridMultiplier">↺</button>
+                    </div>
+                    <input type="range" id="grid-size-range" min="0.1" max="2.0" step="0.05" value="0.95">
+                </div>
+                <div class="setting-item">
+                    <div class="setting-header">
+                        <label>GRID ROTATION: <span id="grid-angle-val">45</span>°</label>
+                        <button class="reset-btn visual-reset-btn" data-param="gridRotation">↺</button>
+                    </div>
+                    <input type="range" id="grid-angle-range" min="0" max="360" step="1" value="45">
+                </div>
+                <div class="setting-item">
+                    <div class="setting-header">
+                        <label>GEOMETRY</label>
+                        <button class="reset-btn visual-reset-btn" data-param="geometryType">↺</button>
+                    </div>
+                    <select id="geometry-select">
+                        <option value="box" selected>BOX</option>
+                        <option value="sphere">SPHERE</option>
+                        <option value="cylinder">CYLINDER</option>
+                        <option value="torus">TORUS</option>
+                    </select>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-header">
+                        <label>WAVE SPEED: <span id="wave-speed-val">1.0</span></label>
+                        <button class="reset-btn visual-reset-btn" data-param="waveSpeed">↺</button>
+                    </div>
+                    <input type="range" id="wave-speed-range" min="0.1" max="5.0" step="0.1" value="1.0">
+                </div>
+                <div class="setting-item">
+                    <div class="setting-header">
+                        <label>VOICE BOOST: <span id="voice-boost-val">1.0</span></label>
+                        <button class="reset-btn visual-reset-btn" data-param="voiceBoost">↺</button>
+                    </div>
+                    <input type="range" id="voice-boost-range" min="0.0" max="3.0" step="0.1" value="1.0">
+                </div>
+                <button class="btn" id="reset-all-visuals-btn" style="width: 100%; margin-top: 15px; background: rgba(var(--theme-r), var(--theme-g), var(--theme-b), 0.15); color: var(--theme-color); border: 1px solid rgba(var(--theme-r), var(--theme-g), var(--theme-b), 0.5); font-size: 10px;">RESET ALL VISUALS</button>
             </div>
         </div>
     </div>
@@ -588,6 +713,123 @@
         rateRange.oninput = (e) => { voiceSettings.rate = parseFloat(e.target.value); rateVal.textContent = voiceSettings.rate.toFixed(1); };
         volumeRange.oninput = (e) => { voiceSettings.volume = parseFloat(e.target.value); volumeVal.textContent = voiceSettings.volume.toFixed(1); };
         lengthRange.oninput = (e) => { voiceSettings.maxLength = parseInt(e.target.value); lengthVal.textContent = voiceSettings.maxLength; };
+ 
+        // ============================================================
+        // Visual Settings UI
+        // ============================================================
+        const defaultVisualSettings = {
+            themeColor: '#00ffdc',
+            bgColor: '#000000',
+            lightColor1: '#00ffff',
+            lightColor2: '#007fff',
+            lightIntensity: 1.0,
+            blockSize: 27,
+            gridSpacing: 58,
+            gridMultiplier: 0.95,
+            gridRotation: 45,
+            geometryType: 'box',
+            waveSpeed: 1.0,
+            voiceBoost: 1.0
+        };
+ 
+        let visualSettings = { ...defaultVisualSettings };
+ 
+        const themeColorInput = document.getElementById('theme-color');
+        const bgColorInput = document.getElementById('bg-color');
+        const light1ColorInput = document.getElementById('light1-color');
+        const light2ColorInput = document.getElementById('light2-color');
+        const intensityRange = document.getElementById('intensity-range');
+        const blockSizeRange = document.getElementById('block-size-range');
+        const gridSpacingRange = document.getElementById('grid-spacing-range');
+        const gridSizeRange = document.getElementById('grid-size-range');
+        const gridAngleRange = document.getElementById('grid-angle-range');
+        const geometrySelect = document.getElementById('geometry-select');
+        const waveSpeedRange = document.getElementById('wave-speed-range');
+        const voiceBoostRange = document.getElementById('voice-boost-range');
+ 
+        const intensityVal = document.getElementById('intensity-val');
+        const blockSizeVal = document.getElementById('block-size-val');
+        const gridSpacingVal = document.getElementById('grid-spacing-val');
+        const gridSizeVal = document.getElementById('grid-size-val');
+        const gridAngleVal = document.getElementById('grid-angle-val');
+        const waveSpeedVal = document.getElementById('wave-speed-val');
+        const voiceBoostVal = document.getElementById('voice-boost-val');
+ 
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : null;
+        }
+ 
+        function updateVisualUI() {
+            themeColorInput.value = visualSettings.themeColor;
+            bgColorInput.value = visualSettings.bgColor;
+            light1ColorInput.value = visualSettings.lightColor1;
+            light2ColorInput.value = visualSettings.lightColor2;
+            intensityRange.value = visualSettings.lightIntensity;
+            intensityVal.textContent = visualSettings.lightIntensity.toFixed(1);
+            blockSizeRange.value = visualSettings.blockSize;
+            blockSizeVal.textContent = visualSettings.blockSize;
+            gridSpacingRange.value = visualSettings.gridSpacing;
+            gridSpacingVal.textContent = visualSettings.gridSpacing;
+            gridSizeRange.value = visualSettings.gridMultiplier;
+            gridSizeVal.textContent = visualSettings.gridMultiplier.toFixed(2);
+            gridAngleRange.value = visualSettings.gridRotation;
+            gridAngleVal.textContent = visualSettings.gridRotation;
+            geometrySelect.value = visualSettings.geometryType;
+            waveSpeedRange.value = visualSettings.waveSpeed;
+            waveSpeedVal.textContent = visualSettings.waveSpeed.toFixed(1);
+            voiceBoostRange.value = visualSettings.voiceBoost;
+            voiceBoostVal.textContent = visualSettings.voiceBoost.toFixed(1);
+ 
+            // Update theme variables
+            const rgb = hexToRgb(visualSettings.themeColor);
+            if (rgb) {
+                document.documentElement.style.setProperty('--theme-color', visualSettings.themeColor);
+                document.documentElement.style.setProperty('--theme-r', rgb.r);
+                document.documentElement.style.setProperty('--theme-g', rgb.g);
+                document.documentElement.style.setProperty('--theme-b', rgb.b);
+            }
+        }
+ 
+        themeColorInput.oninput = (e) => {
+            visualSettings.themeColor = e.target.value;
+            const rgb = hexToRgb(e.target.value);
+            if (rgb) {
+                document.documentElement.style.setProperty('--theme-color', e.target.value);
+                document.documentElement.style.setProperty('--theme-r', rgb.r);
+                document.documentElement.style.setProperty('--theme-g', rgb.g);
+                document.documentElement.style.setProperty('--theme-b', rgb.b);
+            }
+        };
+        bgColorInput.oninput = (e) => visualSettings.bgColor = e.target.value;
+        light1ColorInput.oninput = (e) => visualSettings.lightColor1 = e.target.value;
+        light2ColorInput.oninput = (e) => visualSettings.lightColor2 = e.target.value;
+        intensityRange.oninput = (e) => { visualSettings.lightIntensity = parseFloat(e.target.value); intensityVal.textContent = visualSettings.lightIntensity.toFixed(1); };
+        blockSizeRange.oninput = (e) => { visualSettings.blockSize = parseInt(e.target.value); blockSizeVal.textContent = visualSettings.blockSize; };
+        gridSpacingRange.oninput = (e) => { visualSettings.gridSpacing = parseInt(e.target.value); gridSpacingVal.textContent = visualSettings.gridSpacing; };
+        gridSizeRange.oninput = (e) => { visualSettings.gridMultiplier = parseFloat(e.target.value); gridSizeVal.textContent = visualSettings.gridMultiplier.toFixed(2); };
+        gridAngleRange.oninput = (e) => { visualSettings.gridRotation = parseInt(e.target.value); gridAngleVal.textContent = visualSettings.gridRotation; };
+        geometrySelect.onchange = (e) => visualSettings.geometryType = e.target.value;
+        waveSpeedRange.oninput = (e) => { visualSettings.waveSpeed = parseFloat(e.target.value); waveSpeedVal.textContent = visualSettings.waveSpeed.toFixed(1); };
+        voiceBoostRange.oninput = (e) => { visualSettings.voiceBoost = parseFloat(e.target.value); voiceBoostVal.textContent = visualSettings.voiceBoost.toFixed(1); };
+ 
+        document.querySelectorAll('.visual-reset-btn').forEach(btn => {
+            btn.onclick = () => {
+                const param = btn.getAttribute('data-param');
+                visualSettings[param] = defaultVisualSettings[param];
+                updateVisualUI();
+            };
+        });
+ 
+        document.getElementById('reset-all-visuals-btn').onclick = () => {
+            visualSettings = { ...defaultVisualSettings };
+            updateVisualUI();
+        };
+ 
 
 
         // ============================================================
@@ -994,22 +1236,27 @@
 
         function draw() {
             // AIの発話中かどうかでアニメーションをスピードアップさせる
-            let boost = isAiSpeaking ? 0.38 : 0;
-            let speedMult = isAiSpeaking ? 5.0 : 1.0;
+            let boost = (isAiSpeaking ? 0.38 : 0) * visualSettings.voiceBoost;
+            let speedMult = (isAiSpeaking ? 5.0 : 1.0) * visualSettings.waveSpeed;
 
             t += 0.018 * speedMult;
             q += 0.008 * speedMult;
 
             // 固定カメラ
             translate(0, 0, -100);
-            rotateZ(PI / 4); // グリッド全体を45度回転させてひし形にする
+            rotateZ(radians(visualSettings.gridRotation)); 
             clear();
+            background(visualSettings.bgColor);
 
             // ライティング
-            pointLight(0, 255, 255, 0, 0, -100);
-            pointLight(0, 127, 255, 200, 200, -200);
-            directionalLight(63, 63, 63, -1, -1, -1);
-            pointLight(200, 230, 255, -300, -200, -150);
+            let l1 = hexToRgb(visualSettings.lightColor1);
+            let l2 = hexToRgb(visualSettings.lightColor2);
+            let intensity = visualSettings.lightIntensity;
+            
+            pointLight(l1.r * intensity, l1.g * intensity, l1.b * intensity, 0, 0, -100);
+            pointLight(l2.r * intensity, l2.g * intensity, l2.b * intensity, 200, 200, -200);
+            directionalLight(63 * intensity, 63 * intensity, 63 * intensity, -1, -1, -1);
+            pointLight(200 * intensity, 230 * intensity, 255 * intensity, -300, -200, -150);
 
             ambientMaterial(255);
             scale(0.5);
@@ -1017,14 +1264,14 @@
             // ==========================================
             // 正方形のグリッドレイアウト (中央配置)
             // ==========================================
-            const gridSize = min(width, height) * 0.95;
+            const gridSize = min(width, height) * visualSettings.gridMultiplier;
             translate(-gridSize / 2, -gridSize / 2, 0);
 
             const cx = gridSize / 2;
             const cy = gridSize / 2;
             const maxD = dist(0, 0, cx, cy);
 
-            const spacing = 58;
+            const spacing = visualSettings.gridSpacing;
             for (let y = 0; y < gridSize; y += spacing) {
                 for (let x = 0; x < gridSize; x += spacing) {
                     push();
@@ -1053,7 +1300,17 @@
 
                     rotateX(rx);
                     scale(s);
-                    box(27, 27, 27);
+                    
+                    const bs = visualSettings.blockSize;
+                    if (visualSettings.geometryType === 'box') {
+                        box(bs, bs, bs);
+                    } else if (visualSettings.geometryType === 'sphere') {
+                        sphere(bs / 2);
+                    } else if (visualSettings.geometryType === 'cylinder') {
+                        cylinder(bs / 2, bs);
+                    } else if (visualSettings.geometryType === 'torus') {
+                        torus(bs / 2, bs / 5);
+                    }
                     pop();
                 }
             }
