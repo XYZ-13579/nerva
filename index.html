@@ -922,12 +922,21 @@
                 activeUtterances++;
                 isAiSpeaking = true;
 
+                // 読み上げ開始時にマイクを止める
+                if (recognition) {
+                    try { recognition.stop(); } catch (e) { }
+                }
+
                 utterance.onstart = () => { isAiSpeaking = true; };
                 utterance.onend = () => {
                     activeUtterances--;
                     if (activeUtterances <= 0) {
                         isAiSpeaking = false;
                         activeUtterances = 0;
+                        // 読み上げ完了後にマイクを再開（もしユーザーがオンにしていたら）
+                        if (isListening && recognition) {
+                            try { recognition.start(); } catch (e) { }
+                        }
                     }
                     resolve();
                 };
@@ -936,6 +945,9 @@
                     if (activeUtterances <= 0) {
                         isAiSpeaking = false;
                         activeUtterances = 0;
+                        if (isListening && recognition) {
+                            try { recognition.start(); } catch (e) { }
+                        }
                     }
                     resolve();
                 };
@@ -964,7 +976,7 @@
                 </div>
             `;
             placeholder.style.display = 'block';
-            finalTextEl.innerHTML = '';
+            finalTextEl.innerHTML = ''; // Processing中は以前のように表示をクリアする
 
             // 既存のタイピングアニメーションをキャンセル
             if (textDisplayTimer) {
@@ -1083,11 +1095,11 @@
                 sendToAiAndSpeak(textToSend);
             } else {
                 currentTranscript = '';
-                finalTextEl.textContent = '';
+                // finalTextEl.textContent = ''; // 回答を消さないようにコメントアウト
                 interimTextEl.textContent = '';
                 if (!isWaitingForAi && !isAiSpeaking) {
                     placeholder.style.display = 'block';
-                    placeholder.textContent = '認識中…';
+                    placeholder.textContent = '待機中...';
                 }
             }
 
@@ -1142,7 +1154,7 @@
             };
 
             recognition.onend = () => {
-                if (isListening) {
+                if (isListening && !isAiSpeaking) {
                     try { recognition.start(); } catch (e) { }
                 }
             };
