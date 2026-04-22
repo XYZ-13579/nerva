@@ -36,7 +36,7 @@ const server = http.createServer(async (req, res) => {
                 if (maxLength) {
                     currentMessages.push({
                         role: "system",
-                        content: `出力は必ず約${maxLength}文字以内に収め、簡潔に返答してください。`
+                        content: `出力は必ず約${maxLength}文字程度にして下さい。それ以外は禁止します。`
                     });
                 }
 
