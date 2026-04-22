@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nerva/v1.0</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Noto+Sans+JP:wght@300;400&display=swap"
+        rel="stylesheet" />
+    <style>
+        :root {
+            --theme-color: #00ffdc;
+            --theme-r: 0;
+            --theme-g: 255;
+            --theme-b: 220;
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html,
+        body {
+            overflow: hidden;
+            background: #000;
+            font-family: 'Share Tech Mono', monospace;
+            color: #fff;
+        }
+
+        canvas {
+            display: block;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 0;
+        }
+
+        /* ===== Overlay ===== */
+        #overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 28px 32px;
+        }
+
+        /* ===== Top Bar ===== */
+        #top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        #brand {
+            font-size: 11px;
+            letter-spacing: 5px;
+            color: rgba(var(--theme-r), var(--theme-g), var(--theme-b), 0.5);
+            text-transform: uppercase;
+        }
+
+        #status-pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            border: 1px solid rgba(var(--theme-r), var(--theme-g), var(--theme-b), 0.25);
+            border-radius: 20px;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(12px);
+        }
+
+        #status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #333;
+            transition: background 0.4s, box-shadow 0.4s;
+        }
+
+        #status-dot.listening {
+            background: var(--theme-color);
+            box-shadow: 0 0 8px var(--theme-color), 0 0 20px var(--theme-color)44;
+            animation: blink 1.4s ease-in-out infinite;
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.3;
+            }
+        }
+
+        #status-label {
+            font-size: 10px;
+            letter-spacing: 3px;
+            color: rgba(255, 255, 255, 0.5);
+            text-transform: uppercase;
+        }
+
+        #status-label.listening {
+            color: var(--theme-color);
+        }
+
+        /* ===== Bottom section ===== */
+        #bottom {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 18px;
+        }
+
+        /* ===== Transcript ===== */
+        #transcript-wrap {
+            width: min(620px, 90vw);
+            min-height: 58px;
+            background: rgba(0, 0, 0, 0.55);
+            border: 1px solid rgba(var(--theme-r), var(--theme-g), var(--theme-b), 0.18);
+            border-radius: 4px;
+            padding: 14px 22px;
+            backdrop-filter: blur(16px);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #transcript-wrap::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, transparent, rgba(var(--theme-r), var(--theme-g), var(--theme-b), 0.03), transparent);
+            animation: scan 3s linear infinite;
+        }
+
+        @keyframes scan {
+            0% {
+                transform: translateX(-100%);
+            }
+
+            100% {
+                transform: translateX(100%);
+            }
+        }
+
+        #final-text {
+            font-family: 'Noto Sans JP', sans-serif;
+            font-size: 15px;
+            font-weight: 300;
+            line-height: 1.7;
+            color: var(--theme-color);
+            text-shadow: 0 0 8px rgba(var(--theme-r), var(--theme-g), var(--theme-b), 0.4);
+        }
+
+        #interim-text {
+            font-family: 'Noto Sans JP', sans-serif;
+            font-size: 15px;
+            font-weight: 300;
+            line-height: 1.7;
+            color: rgba(var(--theme-r), var(--theme-g), var(--theme-b), 0.45);
+        }
+
+        #placeholder {
+            font-size: 11px;
+            letter-spacing: 3px;
+            color: rgba(255, 255, 255, 0.2);
+            text-transform: uppercase;
+        }
+
+        /* ===== Text Input ===== */
+        #text-input-wrap {
+            display: flex;
+            gap: 12px;
+            width: min(620px, 90vw);
+            pointer-events: all;
+        }
+
+        #manual-text-input {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.55);
+            border: 1px solid rgba(var(--theme-r), var(--theme-g), var(--theme-b), 0.18);
+            border-radius: 4px;
+            padding: 10px 14px;
+            color: #fff;
+            font-family: 'Noto Sans JP', sans-serif;
+            font-size: 14px;
+            backdrop-filter: blur(16px);
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        #manual-text-input:focus {
+            border-color: var(--theme-color);
+        }
+
+        .cursor-typing {
+            display: inline-block;
+            animation: pulse-cursor 0.8s infinite;
+            color: var(--theme-color);
+            text-shadow: 0 0 12px var(--theme-color), 0 0 24px var(--theme-color)66;
+            margin-left: 2px;
+        }
+
+        @keyframes pulse-cursor {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0;
+            }
+        }
+
+        .thinking-indicator {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .thinking-indicator .dot {
+            width: 6px;
+            height: 6px;
+            background: var(--theme-color);
+            border-radius: 50%;
+            animation: cyber-bounce 1s infinite ease-in-out;
+        }
+
+        .thinking-indicator span {
+            color: rgba(var(--theme-r), var(--theme-g), var(--theme-b), 0.8);
+            font-size: 11px;
+            margin-left: 4px;
+            letter-spacing: 2px;
+            font-family: 'Share Tech Mono', monospace;
+        }
+
+        @keyframes cyber-bounce {
+
+            0%,
+            100% {
+                transform: translateY(0);
+                opacity: 0.4;
+            }
+
+            50% {
+                transform: translateY(-4px);
+                opacity: 1;
+                box-shadow: 0 0 8px var(--theme-color);
+            }
+        }
+
+        /* ===== Settings Modal ===== */
+        #settings-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: rgba(0, 50, 40, 0.9);
+            border: 1px solid var(--theme-color);
+            box-shadow: 0 0 20px rgba(var(--theme-r), var(--theme-g), var(--theme-b), 0.2);
+            border-radius: 6px;
+            width: min(400px, 90vw);
+            padding: 20px;
+            pointer-events: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid rgba(var(--theme-r), var(--theme-g), var(--theme-b), 0.3);
+            padding-bottom: 10px;
+        }
+
+        .modal-header h2 {
+            font-size: 14px;
+            color: var(--theme-color);
+            letter-spacing: 2px;
+        }
+
+        #close-settings-btn {
+            background: transparent;
+            color: var(--theme-color);
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .setting-item {
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .setting-item label {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.8);
+            font-family: 'Share Tech Mono', monospace;
+        }
+
+        .setting-item select,
+        .setting-item input[type="range"] {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(var(--theme-r), var(--theme-g), var(--theme-b), 0.4);
+            color: #fff;
+            padding: 6px;
+            outline: none;
+            border-radius: 4px;
+            font-family: 'Noto Sans JP', sans-serif;
+        }
+
+        .setting-item input[type="range"] {
+            accent-color: var(--theme-color);
+            cursor: pointer;
+            padding: 0;
+            height: 4px;
+        }
+
+        /* ===== Controls ===== */
+        #controls {
+            display: flex;
+            gap: 12px;
+            pointer-events: all;
+        }
+
+        .btn {
+            padding: 11px 30px;
+            border: none;
+            border-radius: 2px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 12px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: rgba(255, 255, 255, 0);
+            transition: background 0.15s;
+        }
+
+        .btn:hover::after {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .btn:active {
+            transform: scale(0.97);
+        }
+
+        #start-btn {
+            background: var(--theme-color);
+            color: #000;
+            font-weight: 700;
+        }
+
+        #stop-btn {
+            background: transparent;
+            color: rgba(255, 255, 255, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Main overlay -->
+    <div id="overlay">
+
+        <div id="top-bar">
+            <div id="brand">Nerva &nbsp;/&nbsp; v1.0</div>
+            <div id="status-pill">
+                <div id="status-dot"></div>
+                <span id="status-label">STANDBY</span>
+            </div>
+        </div>
+
+        <div id="bottom">
+
+            <div id="transcript-wrap">
+                <div id="placeholder">テキストを入力するか、音声入力を開始してください</div>
+                <span id="final-text"></span><span id="interim-text"></span>
+            </div>
+
+            <div id="text-input-wrap">
+                <input type="text" id="manual-text-input" placeholder="テキストで質問する..." autocomplete="off" />
+                <button class="btn" id="send-btn">SEND</button>
+            </div>
+
+            <div id="controls">
+                <button class="btn" id="start-btn">▶ START MIC</button>
+                <button class="btn" id="stop-btn">■ STOP MIC</button>
+                <button class="btn" id="settings-btn">⚙ OPTIONS</button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" style="display: none;">
+        <div class="modal-content" style="max-height: 85vh; overflow-y: auto;">
+            <div class="modal-header">
+                <h2>CONFIG</h2>
+                <button id="close-settings-btn">✕</button>
+            </div>
+            <div class="modal-body">
+                <h3
+                    style="color: var(--theme-color); font-size: 13px; margin-bottom: 10px; margin-top: 10px; border-bottom: 1px solid rgba(var(--theme-r), var(--theme-g), var(--theme-b), 0.3); padding-bottom: 5px;">
+                    VOICE</h3>
+                <div class="setting-item">
+                    <label>VOICE</label>
+                    <select id="voice-select"></select>
+                </div>
+                <div class="setting-item">
+                    <label>PITCH: <span id="pitch-val">1.0</span></label>
+                    <input type="range" id="pitch-range" min="0.1" max="2.0" step="0.1" value="1.0">
+                </div>
+                <div class="setting-item">
+                    <label>SPEED: <span id="rate-val">1.0</span></label>
+                    <input type="range" id="rate-range" min="0.1" max="3.0" step="0.1" value="1.0">
+                </div>
+                <div class="setting-item">
+                    <label>VOLUME: <span id="volume-val">1.0</span></label>
+                    <input type="range" id="volume-range" min="0.0" max="1.0" step="0.1" value="1.0">
+                </div>
+                <div class="setting-item">
+                    <label>LENGTH (Chars): <span id="length-val">200</span></label>
+                    <input type="range" id="length-range" min="50" max="1000" step="50" value="200">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================================
+        // Perlin Noise
+        // ============================================================
+        (function (j, c, a, m) {
+            u = c => c * c * c * (c * (6 * c - 15) + 10); g = (c, a, b) => (1 - c) * a + c * b;
+            f = (a, b, d, w) => { a &= 15; c = 8 > a ? b : d; b = 4 > a ? d : 12 == a || 14 == a ? b : w; return (0 == (a & 1) ? c : -c) + (0 == (a & 2) ? b : -b) }
+            for (a = [], b = 0; 256 > b; b++)a[b] = b; for (b = 255; 0 < b; b--) { m = j(Math.random() * (b + 1)), x = a[b]; a[b] = a[m]; a[m] = x } for (b = 0; 256 > b; b++)a[256 + b] = a[b];
+            window.perlin = (x, y, z) => {
+                var c = j(x), h = j(y), l = j(z), n = c & 255, p = h & 255, k = l & 255; x -= c; y -= h; z -= l; c = x - 1; h = y - 1; l = z - 1;
+                var t = u(x), m = u(y), q = a[n] + p, v = a[q] + k; q = a[q + 1] + k; p = a[n + 1] + p; n = a[p] + k; k = a[p + 1] + k;
+                return g(u(z), g(m, g(t, f(a[v], x, y, z), f(a[n], c, y, z)), g(t, f(a[q], x, h, z), f(a[k], c, h, z))), g(m, g(t, f(a[v + 1], x, y, l), f(a[n + 1], c, y, z - 1)), g(t, f(a[q + 1], x, h, l), f(a[k + 1], c, h, l))))
+            }
+        })(Math.floor);
+
+        // ============================================================
+        // SimpleCam
+        // ============================================================
+        class Damp {
+            constructor(a, b, c, d) { this.val_reset = a, this.val_start = a, this.val_now = a, this.val_end = a, this.limit = d, this.speed = b, this.damp = c, this.state = null }
+            active() { return null !== this.state }
+            start(a) { this.state = a, this.val_start = this.val_now }
+            drag(a) { if (this.active()) { var b = this.state - a; this.val_end = this.val_start + b * this.speed, this.limit && (this.val_end = min(max(this.val_end, this.limit[0]), this.limit[1])) } }
+            end() { this.state = null }
+            update() { return this.val_now = this.val_end * this.damp + this.val_now * (1 - this.damp), this.val_now }
+            reset(a) { this.val_end = a === void 0 ? this.val_reset : a }
+        }
+        window.document.ontouchmove = null;
+        class SimpleCam {
+            constructor(a) {
+                this.parent = a, this.active = !0,
+                    this.dx = new Damp(0, -1, .07, [-400, 400]), this.dy = new Damp(0, -1, .07, [-400, 400]),
+                    this.rx = new Damp(0, +.01, .07, [-PI, PI]), this.ry = new Damp(0, +.01, .07, [-PI, PI]),
+                    this.zoom = new Damp(1e3, -10, .07, [400, 1e4]), this.mouseDragging = 0;
+                var b = this;
+                a.addEventListener("wheel", function (a) { b.zoom.start(-a.deltaY); b.zoom.drag(a.deltaY * 10); b.zoom.end(); });
+                a.addEventListener("dblclick", function () { b.reset() });
+                a.addEventListener("mousemove", function () { b.mouseDragging && b.dragP(); });
+                a.addEventListener("mousedown", function (a) { if (a.button === 0) b.startOrbit(); if (a.button === 1) b.startPan(); if (a.button === 2) b.startZoom(); b.mouseDragging = !0; });
+                a.addEventListener("mouseup", function (a) { if (a.button === 0) b.endOrbit(); if (a.button === 1) b.endPan(); if (a.button === 2) b.endZoom(); b.mouseDragging = 0; });
+                a.addEventListener("touchstart", function (a) { if (a.touches.length === 1) b.startOrbitT(a.touches); if (a.touches.length === 2) b.startZoomT(a.touches); }, false);
+                a.addEventListener("touchmove", function (a) { if (a.touches.length === 1) b.dragT(a.touches); }, false);
+                a.addEventListener("touchend", function () { b.endOrbit(), b.endZoom() }, false);
+                a._renderer._pInst.registerMethod("pre", function () { b.active && (b.drag(), b.update()) });
+            }
+            startPan() { this.dx.start(this.parent.mouseX); this.dy.start(this.parent.mouseY); }
+            startOrbit() { this.rx.start(this.parent.mouseY), this.ry.start(this.parent.mouseX) }
+            startOrbitT(t) { this.rx.start(t[0].clientY), this.ry.start(t[0].clientX) }
+            startZoom() { this.zoom.start(this.parent.mouseY) }
+            startZoomT(t) { this.endOrbit(), this.endZoom(), this.zoom.start(Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY)) }
+            drag() { this.rx.drag(this.parent.mouseY), this.ry.drag(this.parent.mouseX), this.mouseDragging && this.zoom.drag(this.parent.mouseY); }
+            dragT(t) { this.rx.drag(t[0].clientY), this.ry.drag(t[0].clientX) }
+            dragP() { this.dx.drag(this.parent.mouseX), this.dy.drag(this.parent.mouseY) }
+            endOrbit() { this.rx.end(), this.ry.end() }
+            endPan() { this.dx.end(), this.dy.end() }
+            endZoom() { this.zoom.end() }
+            activate(a) { this.active = a }
+            reset() { this.dx.reset(), this.dy.reset(), this.rx.reset(), this.ry.reset(), this.zoom.reset() }
+            update() { this.dx.update(), this.dy.update(), this.rx.update(), this.ry.update(), this.zoom.update() }
+            apply(a) { a = a || this.parent, a.translate(this.dx.val_now, this.dy.val_now, -this.zoom.val_now), a.rotateX(this.rx.val_now), a.rotateZ(this.ry.val_now) }
+        }
+        p5.prototype.createSimpleCam = function () { return new SimpleCam(window); }
+        document.oncontextmenu = () => false;
+
+        // ============================================================
+        // Global Audio State
+        // ============================================================
+        let smoothedLevel = 0;
+        let isListening = false;
+
+        // ============================================================
+        // UI References
+        // ============================================================
+        const statusDot = document.getElementById('status-dot');
+        const statusLabel = document.getElementById('status-label');
+        const finalTextEl = document.getElementById('final-text');
+        const interimTextEl = document.getElementById('interim-text');
+        const placeholder = document.getElementById('placeholder');
+
+        // ============================================================
+        // Voice Settings UI
+        // ============================================================
+        let voiceSettings = {
+            voiceURI: null,
+            pitch: 1.0,
+            rate: 1.0,
+            volume: 1.0,
+            maxLength: 200
+        };
+
+        const settingsBtn = document.getElementById('settings-btn');
+        const settingsModal = document.getElementById('settings-modal');
+        const closeSettingsBtn = document.getElementById('close-settings-btn');
+        const voiceSelect = document.getElementById('voice-select');
+        const pitchRange = document.getElementById('pitch-range');
+        const rateRange = document.getElementById('rate-range');
+        const volumeRange = document.getElementById('volume-range');
+        const lengthRange = document.getElementById('length-range');
+        const pitchVal = document.getElementById('pitch-val');
+        const rateVal = document.getElementById('rate-val');
+        const volumeVal = document.getElementById('volume-val');
+        const lengthVal = document.getElementById('length-val');
+
+        function populateVoices() {
+            const voices = window.speechSynthesis.getVoices();
+            voiceSelect.innerHTML = '';
+            voices.forEach(v => {
+                const option = document.createElement('option');
+                option.value = v.voiceURI;
+                option.textContent = `${v.name} (${v.lang})`;
+                if (voiceSettings.voiceURI === v.voiceURI || (!voiceSettings.voiceURI && v.lang.startsWith('ja'))) {
+                    option.selected = true;
+                    // デフォルトのURIを保持
+                    if (!voiceSettings.voiceURI) voiceSettings.voiceURI = v.voiceURI;
+                }
+                voiceSelect.appendChild(option);
+            });
+        }
+
+        settingsBtn.onclick = () => {
+            populateVoices();
+            settingsModal.style.display = 'flex';
+        };
+        closeSettingsBtn.onclick = () => { settingsModal.style.display = 'none'; };
+        voiceSelect.onchange = (e) => voiceSettings.voiceURI = e.target.value;
+        pitchRange.oninput = (e) => { voiceSettings.pitch = parseFloat(e.target.value); pitchVal.textContent = voiceSettings.pitch.toFixed(1); };
+        rateRange.oninput = (e) => { voiceSettings.rate = parseFloat(e.target.value); rateVal.textContent = voiceSettings.rate.toFixed(1); };
+        volumeRange.oninput = (e) => { voiceSettings.volume = parseFloat(e.target.value); volumeVal.textContent = voiceSettings.volume.toFixed(1); };
+        lengthRange.oninput = (e) => { voiceSettings.maxLength = parseInt(e.target.value); lengthVal.textContent = voiceSettings.maxLength; };
+
+
+        // ============================================================
+        // Web Audio API setup
+        // ============================================================
+        let audioCtx, analyser, timeDomainData;
+
+        async function startAudio() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+                audioCtx = new AudioContext();
+                analyser = audioCtx.createAnalyser();
+                analyser.fftSize = 256;
+                analyser.smoothingTimeConstant = 0.75;
+                const src = audioCtx.createMediaStreamSource(stream);
+                src.connect(analyser);
+                timeDomainData = new Uint8Array(analyser.fftSize);
+                tickAudio();
+            } catch (e) {
+                console.error('Mic error:', e);
+                alert('マイクへのアクセスが必要です。');
+            }
+        }
+
+        function tickAudio() {
+            if (!analyser) return;
+
+            if (isListening) {
+                analyser.getByteTimeDomainData(timeDomainData);
+                let rms = 0;
+                for (let i = 0; i < timeDomainData.length; i++) {
+                    const v = (timeDomainData[i] - 128) / 128;
+                    rms += v * v;
+                }
+                const raw = Math.sqrt(rms / timeDomainData.length);
+                const target = raw;
+                // 反応速度を調整して流動性を確保 (0 だったのを 0.18 に修正)
+                const rate = target > smoothedLevel ? 0.18 : 0.05;
+                smoothedLevel = smoothedLevel + (target - smoothedLevel) * rate;
+                smoothedLevel = Math.min(1, Math.max(0, smoothedLevel));
+            } else {
+                smoothedLevel *= 0.88; // 徐々に減衰
+            }
+
+            requestAnimationFrame(tickAudio);
+        }
+
+        // ============================================================
+        // AI Chat & Speech Synthesis
+        // ============================================================
+        let isAiSpeaking = false;
+        let isWaitingForAi = false;
+        let simulatedBoost = 0;
+        let textDisplayTimer = null; // タイピングアニメーション用タイマー
+        let activeUtterances = 0; // 読み上げキューのカウント
+        let aiAbortController = null; // fetchリクエストの中断用
+
+        // WebSpeech APIを初期化（voicesを読み込むため）
+        window.speechSynthesis.getVoices();
+        if (window.speechSynthesis.onvoiceschanged !== undefined) {
+            window.speechSynthesis.onvoiceschanged = () => {
+                window.speechSynthesis.getVoices();
+                populateVoices();
+            };
+        }
+
+
+
+        function speakSentence(text) {
+            return new Promise(resolve => {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'ja-JP';
+
+                const voices = window.speechSynthesis.getVoices();
+                if (voiceSettings.voiceURI) {
+                    const selected = voices.find(v => v.voiceURI === voiceSettings.voiceURI);
+                    if (selected) {
+                        utterance.voice = selected;
+                        utterance.lang = selected.lang;
+                    }
+                } else {
+                    const jpVoice = voices.find(v => v.lang.startsWith('ja'));
+                    if (jpVoice) utterance.voice = jpVoice;
+                }
+
+                utterance.pitch = voiceSettings.pitch;
+                utterance.rate = voiceSettings.rate;
+                utterance.volume = voiceSettings.volume;
+
+                activeUtterances++;
+                isAiSpeaking = true;
+
+                utterance.onstart = () => { isAiSpeaking = true; };
+                utterance.onend = () => {
+                    activeUtterances--;
+                    if (activeUtterances <= 0) {
+                        isAiSpeaking = false;
+                        activeUtterances = 0;
+                    }
+                    resolve();
+                };
+                utterance.onerror = () => {
+                    activeUtterances--;
+                    if (activeUtterances <= 0) {
+                        isAiSpeaking = false;
+                        activeUtterances = 0;
+                    }
+                    resolve();
+                };
+
+                window.speechSynthesis.speak(utterance);
+            });
+        }
+
+        async function sendToAiAndSpeak(text) {
+            if (!text.trim()) return;
+
+            // 既存のリクエストや読み上げがあれば中断する
+            if (aiAbortController) {
+                aiAbortController.abort();
+            }
+            aiAbortController = new AbortController();
+            const currentSignal = aiAbortController.signal;
+
+            isWaitingForAi = true;
+            placeholder.innerHTML = `
+                <div class="thinking-indicator">
+                    <div class="dot" style="animation-delay: 0s;"></div>
+                    <div class="dot" style="animation-delay: 0.2s;"></div>
+                    <div class="dot" style="animation-delay: 0.4s;"></div>
+                    <span>PROCESSING...</span>
+                </div>
+            `;
+            placeholder.style.display = 'block';
+            finalTextEl.innerHTML = '';
+
+            // 既存のタイピングアニメーションをキャンセル
+            if (textDisplayTimer) {
+                clearInterval(textDisplayTimer);
+                textDisplayTimer = null;
+            }
+
+            // AI読み上げをリセット
+            window.speechSynthesis.cancel();
+            isAiSpeaking = false;
+            activeUtterances = 0;
+
+            try {
+                // サーバー (server.js) にリクエストを送信するよう変更
+                const res = await fetch("http://localhost:3001/chat", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ text: text, maxLength: voiceSettings.maxLength }),
+                    signal: currentSignal
+                });
+
+                if (!res.ok) throw new Error("サーバー通信エラー");
+
+                placeholder.style.display = 'none';
+
+                const reader = res.body.getReader();
+                const decoder = new TextDecoder();
+                let fullReply = "";
+                let displayReply = "";
+                let buffer = "";
+                let charIndex = 0;
+                let isAiStreamDone = false;
+
+                // 文字を一つずつ表示するためのタイマー (singularity_debateの25ms間隔を採用)
+                textDisplayTimer = setInterval(() => {
+                    if (charIndex < fullReply.length) {
+                        displayReply += fullReply[charIndex];
+                        charIndex++;
+                        finalTextEl.innerHTML = displayReply + '<span class="cursor-typing">▮</span>';
+                    } else if (isAiStreamDone && charIndex >= fullReply.length) {
+                        clearInterval(textDisplayTimer);
+                        textDisplayTimer = null;
+
+                        // 読み上げ完了後（タイマー完了後）に少し待ってカーソルを消す
+                        const currentReply = displayReply;
+                        setTimeout(() => {
+                            if (finalTextEl.innerHTML.includes(currentReply) && finalTextEl.innerHTML.includes('cursor-typing')) {
+                                finalTextEl.innerHTML = currentReply;
+                            }
+                        }, 1200);
+                    }
+                }, 25);
+
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) {
+                        isAiStreamDone = true;
+                        break;
+                    }
+
+                    const chunkValue = decoder.decode(value, { stream: true });
+                    if (chunkValue) {
+                        fullReply += chunkValue;
+                        buffer += chunkValue;
+
+                        // 句読点で区切って順次読み上げ
+                        const sentenceEndings = /[.!?。！？\n]/;
+                        let match;
+                        while ((match = buffer.match(sentenceEndings)) !== null) {
+                            const sentenceEndIndex = match.index + match[0].length;
+                            const sentence = buffer.substring(0, sentenceEndIndex);
+
+                            if (sentence.trim()) {
+                                speakSentence(sentence); // ストリームをブロックしないようawaitを外す
+                            }
+                            buffer = buffer.substring(sentenceEndIndex);
+                        }
+                    }
+                }
+
+                if (buffer.trim()) {
+                    speakSentence(buffer); // ストリームをブロックしないようawaitを外す
+                }
+
+            } catch (e) {
+                if (e.name === 'AbortError') {
+                    console.log('Previous AI request aborted.');
+                    return; // 中断された場合は何もせず終了（新しいリクエストが進行中）
+                }
+                console.error("AI error:", e);
+                placeholder.textContent = 'サーバーエラーが発生しました。server.jsが起動しているか確認してください。';
+                placeholder.style.display = 'block';
+                finalTextEl.innerHTML = '';
+            } finally {
+                // 現在進行中のリクエストが自分自身であれば待機フラグを下ろす
+                if (aiAbortController && !aiAbortController.signal.aborted) {
+                    isWaitingForAi = false;
+                }
+            }
+        }
+
+        // ============================================================
+        // Speech Recognition
+        // ============================================================
+        let recognition;
+        let currentTranscript = ''; // 現在の発話テキスト（3秒無音でリセット）
+        let silenceTimer = null;
+        const SILENCE_MS = 3000;
+
+        function clearTranscriptAndSend() {
+            if (currentTranscript.trim()) {
+                const textToSend = currentTranscript;
+                currentTranscript = '';
+                interimTextEl.textContent = '';
+                sendToAiAndSpeak(textToSend);
+            } else {
+                currentTranscript = '';
+                finalTextEl.textContent = '';
+                interimTextEl.textContent = '';
+                if (!isWaitingForAi && !isAiSpeaking) {
+                    placeholder.style.display = 'block';
+                    placeholder.textContent = '認識中…';
+                }
+            }
+
+            // 送信後、マイクは生かしたままUIを待機状態に戻す
+            if (isListening) {
+                statusDot.classList.remove('listening');
+                statusLabel.classList.remove('listening');
+                statusLabel.textContent = 'STANDBY';
+            }
+        }
+
+        function resetSilenceTimer() {
+            if (silenceTimer) clearTimeout(silenceTimer);
+            silenceTimer = setTimeout(clearTranscriptAndSend, SILENCE_MS);
+        }
+
+        function setupRecognition() {
+            const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SR) { alert('このブラウザはSpeechRecognitionをサポートしていません。'); return false; }
+
+            recognition = new SR();
+            recognition.lang = 'ja-JP';
+            recognition.interimResults = true;
+            recognition.continuous = true;
+            recognition.maxAlternatives = 1;
+
+            recognition.onresult = (e) => {
+                // AI処理中でも音声を拾って割り込めるようにブロックを解除
+                // if (isAiSpeaking || isWaitingForAi) return; 
+
+                resetSilenceTimer(); // 音声を検出するたびにタイマーをリセット
+
+                // Speech detected: Update UI to LISTENING
+                if (isListening) {
+                    statusDot.classList.add('listening');
+                    statusLabel.classList.add('listening');
+                    statusLabel.textContent = 'LISTENING';
+                }
+
+                let interim = '';
+                for (let i = e.resultIndex; i < e.results.length; i++) {
+                    const txt = e.results[i][0].transcript;
+                    if (e.results[i].isFinal) {
+                        currentTranscript += txt;
+                    } else {
+                        interim = txt;
+                    }
+                }
+                placeholder.style.display = 'none';
+                finalTextEl.textContent = currentTranscript;
+                interimTextEl.textContent = interim;
+            };
+
+            recognition.onend = () => {
+                if (isListening) {
+                    try { recognition.start(); } catch (e) { }
+                }
+            };
+
+            recognition.onerror = (e) => {
+                if (e.error !== 'no-speech') console.warn('SR error:', e.error);
+            };
+
+            return true;
+        }
+
+        // ============================================================
+        // Button & Input handlers
+        // ============================================================
+        const manualInput = document.getElementById('manual-text-input');
+        const sendBtn = document.getElementById('send-btn');
+
+        sendBtn.onclick = () => {
+            const text = manualInput.value;
+            // AI処理中であっても送信を許可する
+            if (text.trim()) {
+                manualInput.value = '';
+                interimTextEl.textContent = '';
+                currentTranscript = '';
+                sendToAiAndSpeak(text);
+            }
+        };
+
+        manualInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                sendBtn.click();
+            }
+        });
+
+        document.getElementById('start-btn').onclick = async () => {
+            if (!audioCtx) await startAudio();
+            if (!recognition && !setupRecognition()) return;
+
+            isListening = true;
+            currentTranscript = '';
+            finalTextEl.textContent = '';
+            interimTextEl.textContent = '';
+            placeholder.style.display = 'block';
+            placeholder.textContent = 'マイク待機中...';
+
+            try { recognition.start(); } catch (e) { }
+
+            // Click starts mic, but UI stays STANDBY until voice is actually caught in onresult
+            statusDot.classList.remove('listening');
+            statusLabel.classList.remove('listening');
+            statusLabel.textContent = 'STANDBY';
+        };
+
+        document.getElementById('stop-btn').onclick = () => {
+            isListening = false;
+            if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null; }
+            if (recognition) { try { recognition.stop(); } catch (e) { } }
+
+            // AI読み上げも停止
+            window.speechSynthesis.cancel();
+            isAiSpeaking = false;
+            isWaitingForAi = false;
+
+            statusDot.classList.remove('listening');
+            statusLabel.classList.remove('listening');
+            statusLabel.textContent = 'STANDBY';
+
+            interimTextEl.textContent = ''; // 認識中テキストを消す
+            if (!currentTranscript) {
+                placeholder.style.display = 'block';
+            }
+        };
+
+        // ============================================================
+        // p5.js 3D Animation
+        // ============================================================
+        function easeOutCubic(x) { return 1 - Math.pow(1 - x, 3); }
+
+        var cam, t = 0, q = 137;
+
+        function setup() {
+            createCanvas(windowWidth, windowHeight, WEBGL);
+            pixelDensity(1.5);
+            smooth();
+            background(0);
+            noStroke();
+        }
+
+        var spikePulse = 0;      // 音声トリガーのスパイク量（瞬間的に跳ね上がる）
+        var prevBoost = 0;      // 前フレームのboost（立ち上がり検出用）
+
+        function draw() {
+            // AIの発話中かどうかでアニメーションをスピードアップさせる
+            let boost = isAiSpeaking ? 0.38 : 0;
+            let speedMult = isAiSpeaking ? 5.0 : 1.0;
+
+            t += 0.018 * speedMult;
+            q += 0.008 * speedMult;
+
+            // 固定カメラ
+            translate(0, 0, -100);
+            rotateZ(PI / 4); // グリッド全体を45度回転させてひし形にする
+            clear();
+
+            // ライティング
+            pointLight(0, 255, 255, 0, 0, -100);
+            pointLight(0, 127, 255, 200, 200, -200);
+            directionalLight(63, 63, 63, -1, -1, -1);
+            pointLight(200, 230, 255, -300, -200, -150);
+
+            ambientMaterial(255);
+            scale(0.5);
+
+            // ==========================================
+            // 正方形のグリッドレイアウト (中央配置)
+            // ==========================================
+            const gridSize = min(width, height) * 0.95;
+            translate(-gridSize / 2, -gridSize / 2, 0);
+
+            const cx = gridSize / 2;
+            const cy = gridSize / 2;
+            const maxD = dist(0, 0, cx, cy);
+
+            const spacing = 58;
+            for (let y = 0; y < gridSize; y += spacing) {
+                for (let x = 0; x < gridSize; x += spacing) {
+                    push();
+                    const d = dist(x, y, cx, cy);
+                    const nd = d / maxD;
+
+                    const zNoise = perlin(x * 0.01, y * 0.01, q) * (12 + boost * 200);
+                    const radialWave = sin(t * 2.2 - d * 0.018) * (1 - nd * 0.4);
+                    const zRadial = radialWave * (600 + boost * 150);
+                    const zSwell = boost * sin(t * 1.4 + d * 0.01) * 300 * (1 - nd * 0.5);
+
+                    translate(x, y, zNoise + zRadial + zSwell);
+
+                    rotateZ(perlin(x * 0.01, y * 0.01, t * 0.4) * PI / 38);
+
+                    const zTotal = zRadial + zSwell;
+                    const zNorm = constrain(map(zTotal, -60, 220, 0, 1), 0, 1);
+
+                    const waveSpeed = 2.8 + boost * 2.0;
+                    const wave = (sin(t * waveSpeed - d * 0.02) + 1) / 2;
+                    const amt = easeOutCubic(wave);
+
+                    const maxScale = 2.2 + boost * 0.8 + zNorm * 1.2;
+                    const s = map(amt, 0, 1, 1.0, maxScale);
+                    const rx = map(amt, 0, 1, 0, PI / 2 + boost * PI / 8 + zNorm * PI / 6);
+
+                    rotateX(rx);
+                    scale(s);
+                    box(27, 27, 27);
+                    pop();
+                }
+            }
+        }
+
+        function windowResized() {
+            resizeCanvas(windowWidth, windowHeight);
+        }
+    </script>
+</body>
+
+</html>
