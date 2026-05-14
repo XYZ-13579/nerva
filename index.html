@@ -1,10 +1,11 @@
-
 <!DOCTYPE html>
 <html lang="ja">
 
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>Nerva/v1.0</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Noto+Sans+JP:wght@300;400&display=swap"
@@ -290,8 +291,13 @@
         }
 
         @keyframes sidebarIn {
-            from { transform: translateX(100%); }
-            to { transform: translateX(0); }
+            from {
+                transform: translateX(100%);
+            }
+
+            to {
+                transform: translateX(0);
+            }
         }
 
         .modal-header {
@@ -418,6 +424,113 @@
             background: transparent;
             color: rgba(255, 255, 255, 0.5);
             border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        /* ===== Responsive Adjustments ===== */
+        @media screen and (max-width: 768px) {
+            #overlay {
+                padding: 16px 20px;
+            }
+
+            #brand {
+                font-size: 9px;
+                letter-spacing: 3px;
+            }
+
+            #status-pill {
+                padding: 4px 10px;
+            }
+
+            #status-label {
+                font-size: 8px;
+                letter-spacing: 2px;
+            }
+
+            #bottom {
+                gap: 12px;
+            }
+
+            #transcript-wrap {
+                width: 95vw;
+                padding: 10px 16px;
+                min-height: 48px;
+            }
+
+            #final-text,
+            #interim-text {
+                font-size: 14px;
+            }
+
+            #text-input-wrap {
+                width: 95vw;
+                gap: 8px;
+            }
+
+            #manual-text-input {
+                font-size: 13px;
+                padding: 8px 12px;
+            }
+
+            #controls {
+                gap: 8px;
+                width: 100%;
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+
+            .btn {
+                padding: 10px 20px;
+                font-size: 11px;
+                flex: 1;
+                min-width: 100px;
+            }
+
+            .modal-content {
+                width: 100%;
+                border-left: none;
+                border-top: 1px solid rgba(var(--theme-r), var(--theme-g), var(--theme-b), 0.4);
+                height: 80vh;
+                margin-top: 20vh;
+                animation: sidebarUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            }
+
+            @keyframes sidebarUp {
+                from {
+                    transform: translateY(100%);
+                }
+                to {
+                    transform: translateY(0);
+                }
+            }
+        }
+
+        /* Landscape optimization */
+        @media screen and (max-height: 450px) and (orientation: landscape) {
+            #overlay {
+                flex-direction: row;
+                align-items: flex-end;
+                padding: 12px;
+            }
+
+            #top-bar {
+                position: absolute;
+                top: 12px;
+                left: 12px;
+                right: 12px;
+            }
+
+            #bottom {
+                width: 100%;
+                gap: 8px;
+            }
+
+            #transcript-wrap {
+                width: 60vw;
+            }
+
+            #text-input-wrap {
+                width: 60vw;
+            }
         }
     </style>
 </head>
@@ -580,7 +693,9 @@
                     </div>
                     <input type="range" id="voice-boost-range" min="0.0" max="3.0" step="0.1" value="1.0">
                 </div>
-                <button class="btn" id="reset-all-visuals-btn" style="width: 100%; margin-top: 15px; background: rgba(var(--theme-r), var(--theme-g), var(--theme-b), 0.15); color: var(--theme-color); border: 1px solid rgba(var(--theme-r), var(--theme-g), var(--theme-b), 0.5); font-size: 10px;">RESET ALL VISUALS</button>
+                <button class="btn" id="reset-all-visuals-btn"
+                    style="width: 100%; margin-top: 15px; background: rgba(var(--theme-r), var(--theme-g), var(--theme-b), 0.15); color: var(--theme-color); border: 1px solid rgba(var(--theme-r), var(--theme-g), var(--theme-b), 0.5); font-size: 10px;">RESET
+                    ALL VISUALS</button>
             </div>
         </div>
     </div>
@@ -623,9 +738,15 @@
                 a.addEventListener("wheel", function (a) { b.zoom.start(-a.deltaY); b.zoom.drag(a.deltaY * 10); b.zoom.end(); });
                 a.addEventListener("dblclick", function () { b.reset() });
                 a.addEventListener("mousemove", function () { b.mouseDragging && b.dragP(); });
-                a.addEventListener("mousedown", function (a) { if (a.button === 0) b.startOrbit(); if (a.button === 1) b.startPan(); if (a.button === 2) b.startZoom(); b.mouseDragging = !0; });
+                a.addEventListener("mousedown", function (a) {
+                    if (a.target.tagName !== 'CANVAS' && a.target !== document.body) return;
+                    if (a.button === 0) b.startOrbit(); if (a.button === 1) b.startPan(); if (a.button === 2) b.startZoom(); b.mouseDragging = !0;
+                });
                 a.addEventListener("mouseup", function (a) { if (a.button === 0) b.endOrbit(); if (a.button === 1) b.endPan(); if (a.button === 2) b.endZoom(); b.mouseDragging = 0; });
-                a.addEventListener("touchstart", function (a) { if (a.touches.length === 1) b.startOrbitT(a.touches); if (a.touches.length === 2) b.startZoomT(a.touches); }, false);
+                a.addEventListener("touchstart", function (a) {
+                    if (a.target.tagName !== 'CANVAS' && a.target !== document.body) return;
+                    if (a.touches.length === 1) b.startOrbitT(a.touches); if (a.touches.length === 2) b.startZoomT(a.touches);
+                }, false);
                 a.addEventListener("touchmove", function (a) { if (a.touches.length === 1) b.dragT(a.touches); }, false);
                 a.addEventListener("touchend", function () { b.endOrbit(), b.endZoom() }, false);
                 a._renderer._pInst.registerMethod("pre", function () { b.active && (b.drag(), b.update()) });
@@ -669,7 +790,7 @@
         // ============================================================
         let voiceSettings = {
             voiceURI: null,
-            pitch: 1.0,
+            pitch: 0.1,
             rate: 1.0,
             volume: 1.0,
             maxLength: 200
@@ -691,6 +812,15 @@
         function populateVoices() {
             const voices = window.speechSynthesis.getVoices();
             voiceSelect.innerHTML = '';
+
+            // 初期化時に "ichiro" を優先的に探す
+            if (!voiceSettings.voiceURI && voices.length > 0) {
+                const ichiro = voices.find(v => v.name.toLowerCase().includes('ichiro'));
+                if (ichiro) {
+                    voiceSettings.voiceURI = ichiro.voiceURI;
+                }
+            }
+
             voices.forEach(v => {
                 const option = document.createElement('option');
                 option.value = v.voiceURI;
@@ -714,7 +844,7 @@
         rateRange.oninput = (e) => { voiceSettings.rate = parseFloat(e.target.value); rateVal.textContent = voiceSettings.rate.toFixed(1); };
         volumeRange.oninput = (e) => { voiceSettings.volume = parseFloat(e.target.value); volumeVal.textContent = voiceSettings.volume.toFixed(1); };
         lengthRange.oninput = (e) => { voiceSettings.maxLength = parseInt(e.target.value); lengthVal.textContent = voiceSettings.maxLength; };
- 
+
         // ============================================================
         // Visual Settings UI
         // ============================================================
@@ -732,9 +862,9 @@
             waveSpeed: 1.0,
             voiceBoost: 1.0
         };
- 
+
         let visualSettings = { ...defaultVisualSettings };
- 
+
         const themeColorInput = document.getElementById('theme-color');
         const bgColorInput = document.getElementById('bg-color');
         const light1ColorInput = document.getElementById('light1-color');
@@ -747,7 +877,7 @@
         const geometrySelect = document.getElementById('geometry-select');
         const waveSpeedRange = document.getElementById('wave-speed-range');
         const voiceBoostRange = document.getElementById('voice-boost-range');
- 
+
         const intensityVal = document.getElementById('intensity-val');
         const blockSizeVal = document.getElementById('block-size-val');
         const gridSpacingVal = document.getElementById('grid-spacing-val');
@@ -755,7 +885,7 @@
         const gridAngleVal = document.getElementById('grid-angle-val');
         const waveSpeedVal = document.getElementById('wave-speed-val');
         const voiceBoostVal = document.getElementById('voice-boost-val');
- 
+
         function hexToRgb(hex) {
             const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
             return result ? {
@@ -764,7 +894,7 @@
                 b: parseInt(result[3], 16)
             } : null;
         }
- 
+
         function updateVisualUI() {
             themeColorInput.value = visualSettings.themeColor;
             bgColorInput.value = visualSettings.bgColor;
@@ -785,7 +915,7 @@
             waveSpeedVal.textContent = visualSettings.waveSpeed.toFixed(1);
             voiceBoostRange.value = visualSettings.voiceBoost;
             voiceBoostVal.textContent = visualSettings.voiceBoost.toFixed(1);
- 
+
             // Update theme variables
             const rgb = hexToRgb(visualSettings.themeColor);
             if (rgb) {
@@ -795,7 +925,7 @@
                 document.documentElement.style.setProperty('--theme-b', rgb.b);
             }
         }
- 
+
         themeColorInput.oninput = (e) => {
             visualSettings.themeColor = e.target.value;
             const rgb = hexToRgb(e.target.value);
@@ -817,7 +947,7 @@
         geometrySelect.onchange = (e) => visualSettings.geometryType = e.target.value;
         waveSpeedRange.oninput = (e) => { visualSettings.waveSpeed = parseFloat(e.target.value); waveSpeedVal.textContent = visualSettings.waveSpeed.toFixed(1); };
         voiceBoostRange.oninput = (e) => { visualSettings.voiceBoost = parseFloat(e.target.value); voiceBoostVal.textContent = visualSettings.voiceBoost.toFixed(1); };
- 
+
         document.querySelectorAll('.visual-reset-btn').forEach(btn => {
             btn.onclick = () => {
                 const param = btn.getAttribute('data-param');
@@ -825,12 +955,12 @@
                 updateVisualUI();
             };
         });
- 
+
         document.getElementById('reset-all-visuals-btn').onclick = () => {
             visualSettings = { ...defaultVisualSettings };
             updateVisualUI();
         };
- 
+
 
 
         // ============================================================
@@ -997,7 +1127,7 @@
 
             try {
                 // サーバー (server.js) にリクエストを送信するよう変更
-                const res = await fetch("http://localhost:3001/chat", {
+                const res = await fetch("http://192.168.0.8:3001/chat", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ text: text, maxLength: voiceSettings.maxLength }),
@@ -1119,7 +1249,7 @@
         }
 
         function resetSilenceTimer() {
-            if (!isListening) return; 
+            if (!isListening) return;
             if (silenceTimer) clearTimeout(silenceTimer);
             silenceTimer = setTimeout(clearTranscriptAndSend, SILENCE_MS);
         }
@@ -1179,21 +1309,21 @@
         // ============================================================
         const manualInput = document.getElementById('manual-text-input');
         const sendBtn = document.getElementById('send-btn');
-
         sendBtn.onclick = () => {
             const text = manualInput.value;
-            // AI処理中であっても送信を許可する
             if (text.trim()) {
                 manualInput.value = '';
                 interimTextEl.textContent = '';
                 currentTranscript = '';
                 sendToAiAndSpeak(text);
+                manualInput.blur();
             }
         };
 
         manualInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 sendBtn.click();
+                manualInput.blur();
             }
         });
 
@@ -1219,13 +1349,13 @@
         document.getElementById('stop-btn').onclick = () => {
             isListening = false;
             if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null; }
-            if (recognition) { try { recognition.abort(); } catch (e) { } } 
+            if (recognition) { try { recognition.abort(); } catch (e) { } }
 
             statusDot.classList.remove('listening');
             statusLabel.classList.remove('listening');
             statusLabel.textContent = 'STANDBY';
 
-            interimTextEl.textContent = ''; 
+            interimTextEl.textContent = '';
             currentTranscript = ''; // 未送信のテキストはクリアする
 
             // AIが処理中または発話中でない場合のみ、プレースホルダーをリセットする
@@ -1263,7 +1393,7 @@
 
             // 固定カメラ
             translate(0, 0, -100);
-            rotateZ(radians(visualSettings.gridRotation)); 
+            rotateZ(radians(visualSettings.gridRotation));
             clear();
             background(visualSettings.bgColor);
 
@@ -1271,7 +1401,7 @@
             let l1 = hexToRgb(visualSettings.lightColor1);
             let l2 = hexToRgb(visualSettings.lightColor2);
             let intensity = visualSettings.lightIntensity;
-            
+
             pointLight(l1.r * intensity, l1.g * intensity, l1.b * intensity, 0, 0, -100);
             pointLight(l2.r * intensity, l2.g * intensity, l2.b * intensity, 200, 200, -200);
             directionalLight(63 * intensity, 63 * intensity, 63 * intensity, -1, -1, -1);
@@ -1319,7 +1449,7 @@
 
                     rotateX(rx);
                     scale(s);
-                    
+
                     const bs = visualSettings.blockSize;
                     if (visualSettings.geometryType === 'box') {
                         box(bs, bs, bs);
